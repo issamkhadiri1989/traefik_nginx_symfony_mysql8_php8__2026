@@ -1,0 +1,107 @@
+services:
+  nginx:
+    build:
+      context: ./infra/
+      args:
+        BUILD_ARGUMENT_ENV: ${APP_ENV:-dev}
+      dockerfile: ./nginx/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./src:/var/www/html:ro,cached
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      php:
+        condition: service_started
+    networks:
+      - internal_network
+      - proxy-net
+    expose:
+      - "80"
+    environment:
+      SERVER_NAME: "http://:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.groups1.rule=Host(`${HOST}.example.test`)"
+      - "traefik.http.routers.groups1.entrypoints=websecure"
+      - "traefik.http.routers.groups1.tls=true"
+      - "traefik.http.services.groups1.loadbalancer.server.port=80"
+      - "traefik.http.services.groups1.loadbalancer.server.scheme=http"
+      - "traefik.docker.network=proxy-net"
+
+  php:
+    build:
+      context: ./infra/
+      dockerfile: ./php/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./src:/var/www/html:cached
+      - ./infra/php/php-fpm.d/www.conf:/usr/local/etc/php-fpm.d/www.conf
+      - ./infra/php/config/php.ini:/usr/local/etc/php/php.ini
+      - ./infra/php/xdebug/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - internal_network
+    expose:
+      - "9000"
+      - "9003"
+
+  database:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DTABASE_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DATABASE_NAME:-groups1_db}
+    volumes:
+        - groups1_mysql:/var/lib/mysql:delegated
+    networks:
+        - internal_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+      image: phpmyadmin/phpmyadmin:5
+      environment:
+          PMA_HOST: database
+      depends_on:
+          - database
+      networks:
+          - internal_network
+          - proxy-net
+      volumes:
+          - groups1__db_admin_data:/var/www/html
+      labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.groups1-pma.rule=Host(`${PMA_HOST}.example.test`)"
+          - "traefik.http.routers.groups1-pma.entrypoints=websecure"
+          - "traefik.http.routers.groups1-pma.tls=true"
+          - "traefik.http.services.groups1-pma.loadbalancer.server.port=80"
+          - "traefik.docker.network=proxy-net"
+
+volumes:
+    groups1__db_admin_data:
+        name: groups1_db_admin_data
+    groups1_mysql:
+        name: groups1_mysql
+
+networks:
+    internal_network:
+        name: internal_network_groups1
+    proxy-net:
+        name: proxy-net
+        external: true
