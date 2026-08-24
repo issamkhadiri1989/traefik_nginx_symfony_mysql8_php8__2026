@@ -12,3 +12,6 @@ stop:
 ## daily commands ##
 start-traefik:
 	docker compose -f ./infra/traefik.yaml up -d
+
+create-network:
+	docker network create proxy-net
