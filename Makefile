@@ -1,17 +1,23 @@
-kill: stop
-	docker system prune
-	docker network prune
-	docker volume prune
+enter:
+	docker compose exec php bash
 
-init:
-	docker network create proxy-net
+start:
+	docker compose up -d --no-recreate --remove-orphans
+
+down:
+	docker compose down --remove-orphans
+
+build: 
+	docker compose build --no-cache --force-rm
+
+install:
+	docker compose exec php composer install --no-cache --no-interaction --optimize-autoloader
 
 stop:
-	docker stop $$(docker ps -aq)
+	docker compose stop
 
-## daily commands ##
-start-traefik:
-	docker compose -f ./infra/traefik.yaml up -d
-
-create-network:
-	docker network create proxy-net
+info:
+	docker compose exec php php -v
+	
+list:
+	docker compose ps
