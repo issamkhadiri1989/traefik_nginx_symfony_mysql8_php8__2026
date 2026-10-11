@@ -52,6 +52,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./app:/var/www/html
+    command: tail -f /dev/null
 
   database:
     image: mysql:8.4
