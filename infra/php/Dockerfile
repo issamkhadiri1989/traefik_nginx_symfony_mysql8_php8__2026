@@ -1,6 +1,5 @@
 FROM php:8.5.12-fpm
 
-# set main params
 ARG BUILD_ARGUMENT_ENV=dev
 
 ENV APP_HOME=/var/www/html
@@ -51,8 +50,10 @@ WORKDIR $APP_HOME
 RUN pecl install xdebug-3.5.1 && \
     docker-php-ext-enable xdebug
 
-# Install the Symfony CLI
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | bash && \
-     apt install symfony-cli
+# install Composer (same PHP runtime as the app)
+ENV COMPOSER_ALLOW_SUPERUSER=1
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR ${APP_HOME}
 
 USER root

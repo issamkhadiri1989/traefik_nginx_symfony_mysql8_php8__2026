@@ -1,5 +1,7 @@
+DOCKER_COMPOSE_PHP=docker compose exec php
+
 enter:
-	docker compose exec php bash
+	$(DOCKER_COMPOSE_PHP) bash
 
 start:
 	docker compose up -d --no-recreate --remove-orphans
@@ -11,13 +13,19 @@ build:
 	docker compose build --no-cache --force-rm
 
 install:
-	docker compose exec php composer install --no-cache --no-interaction --optimize-autoloader
+	$(DOCKER_COMPOSE_PHP) composer install --no-cache --no-interaction --optimize-autoloader
 
 stop:
 	docker compose stop
 
 info:
-	docker compose exec php php -v
+	$(DOCKER_COMPOSE_PHP) php -v
 	
 list:
 	docker compose ps
+
+restart:
+	docker compose restart
+
+build:
+	docker compose build
