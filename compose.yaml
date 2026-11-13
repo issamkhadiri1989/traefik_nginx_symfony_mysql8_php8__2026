@@ -57,7 +57,7 @@ services:
             MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD:-root}
             MYSQL_DATABASE: ${DATABASE_NAME:-main-group_db}
         volumes:
-            - main-group_mysql:/var/lib/mysql:delegated
+            - group-1_mysql:/var/lib/mysql:delegated
         networks:
             - internal_network
         healthcheck:
@@ -88,7 +88,7 @@ services:
             - internal_network
             - proxy-net
         volumes:
-            - main-group__db_admin_data:/var/www/html
+            - group-1__db_admin_data:/var/www/html
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.group-1-pma.rule=Host(`${PMA_HOST}`)"
